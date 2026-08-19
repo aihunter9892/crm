@@ -1,12 +1,11 @@
-# MiniCRM — Stage 1: the business application
+# MiniCRM — Stages 1-2: the application and its first two adapters
 
 A small but complete CRM (Zoho-shaped): leads, accounts, contacts, deals,
 tasks, activities, dashboard and reports.
 
-This is **Stage 1** of the MCP training program. Right now the CRM has exactly
-one interface: a web UI. In later stages the *same* `core/` package gains a
-CLI, a local MCP server, a remote MCP server and a Skill — with zero business
-logic duplicated.
+The CRM now has **two** interfaces over one core: a web UI and a CLI. In later
+stages the same `core/` package gains a local MCP server, a remote MCP server
+and a Skill — with zero business logic duplicated.
 
 ```
                        core/          <- all business logic, one copy
@@ -14,7 +13,7 @@ logic duplicated.
      +---------+---------+---------+-----------+
      |         |         |         |           |
    web/     cli.py   mcp_local  mcp_remote   SKILL.md
-  (built)   (next)     (next)     (next)      (next)
+  (done)    (done)     (next)     (next)      (next)
 ```
 
 ## Run it
@@ -28,6 +27,16 @@ python run.py
 
 Open http://127.0.0.1:8000 — REST docs at http://127.0.0.1:8000/docs
 
+Or drive the same CRM from the terminal:
+
+```bash
+python cli.py --help
+python cli.py dashboard
+python cli.py deals list --open-only
+python cli.py deals move dea_xxxx --stage proposal
+python cli.py --json accounts list        # machine-readable, for agents later
+```
+
 ## Layout
 
 | Path | Role |
@@ -38,8 +47,10 @@ Open http://127.0.0.1:8000 — REST docs at http://127.0.0.1:8000/docs
 | `core/accounts.py` `contacts.py` `leads.py` `deals.py` `tasks.py` `activities.py` | Business operations. |
 | `core/analytics.py` | Dashboard rollups + `stale_accounts()` (the follow-up query). |
 | `web/app.py` | REST adapter. Thin. Contains **no** business logic. |
+| `cli.py` | CLI adapter. Also thin. Same core, different interface. |
 | `web/static/` | Vanilla HTML/CSS/JS UI. No build step. |
 | `seed.py` | 12 accounts, 28 contacts, 21 deals, 18 leads of demo data. |
+| `docs/` | Session-by-session teaching notes. |
 
 ## What the UI does
 
@@ -68,9 +79,14 @@ Open http://127.0.0.1:8000 — REST docs at http://127.0.0.1:8000/docs
 
 ## Next stages
 
-| Stage | Adds | Consumer |
-|---|---|---|
-| 2 | `cli.py` | humans in a terminal |
-| 3 | `mcp_local.py` (stdio) | Claude Code / Codex |
-| 4 | `mcp_remote.py` (HTTP) | Claude.ai / ChatGPT |
-| 5 | `.claude/skills/crm-followup/SKILL.md` | any agent, via the CLI |
+| Stage | Adds | Consumer | Status |
+|---|---|---|---|
+| 1 | Web UI + REST | humans in a browser | done |
+| 2 | `cli.py` | humans in a terminal | done |
+| 3 | `mcp_local.py` (stdio) | Claude Code / Codex | next |
+| 4 | `mcp_remote.py` (HTTP) | Claude.ai / ChatGPT | |
+| 5 | `.claude/skills/crm-followup/SKILL.md` | any agent, via the CLI | |
+
+## Teaching notes
+
+- [Session 2 — Build the CLI adapter](docs/02-cli-adapter.md)
