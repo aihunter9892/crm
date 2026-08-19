@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "minicrm",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["minicrm/run.py"],
+      "port": 8000
+    }
+  ]
+}

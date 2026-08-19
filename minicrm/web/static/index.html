@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MiniCRM</title>
+<link rel="stylesheet" href="/static/styles.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>&#128142;</text></svg>">
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">M</div>
+      <div class="brand-text">
+        <strong>MiniCRM</strong>
+        <span>Sales Cloud</span>
+      </div>
+    </div>
+
+    <nav class="nav" id="nav">
+      <a class="nav-item" href="#/dashboard" data-view="dashboard"><span class="ico">▤</span>Dashboard</a>
+      <a class="nav-item" href="#/leads"     data-view="leads"><span class="ico">✦</span>Leads<em id="badge-leads"></em></a>
+      <a class="nav-item" href="#/accounts"  data-view="accounts"><span class="ico">▦</span>Accounts</a>
+      <a class="nav-item" href="#/contacts"  data-view="contacts"><span class="ico">☺</span>Contacts</a>
+      <a class="nav-item" href="#/pipeline"  data-view="pipeline"><span class="ico">◫</span>Pipeline</a>
+      <a class="nav-item" href="#/deals"     data-view="deals"><span class="ico">◈</span>Deals</a>
+      <a class="nav-item" href="#/tasks"     data-view="tasks"><span class="ico">✓</span>Tasks<em id="badge-tasks"></em></a>
+      <a class="nav-item" href="#/activities" data-view="activities"><span class="ico">◷</span>Activities</a>
+      <a class="nav-item" href="#/reports"   data-view="reports"><span class="ico">◑</span>Reports</a>
+    </nav>
+
+    <div class="sidebar-foot">
+      <a href="/docs" target="_blank" class="api-link">REST API docs →</a>
+      <p class="hint">Same core will power the CLI &amp; MCP server.</p>
+    </div>
+  </aside>
+
+  <!-- ============ MAIN ============ -->
+  <div class="main">
+    <header class="topbar">
+      <div class="search-wrap">
+        <span class="search-ico">⌕</span>
+        <input id="globalSearch" type="search" placeholder="Search accounts, contacts, deals, leads…" autocomplete="off">
+        <div class="search-results" id="searchResults" hidden></div>
+      </div>
+      <div class="topbar-actions">
+        <button class="btn btn-ghost" id="btnRefresh" title="Reload data">⟳</button>
+        <button class="btn btn-primary" id="btnCreate">+ Create</button>
+        <div class="avatar" title="Demo user">RM</div>
+      </div>
+    </header>
+
+    <main class="content" id="view"></main>
+  </div>
+</div>
+
+<!-- ============ MODAL ============ -->
+<div class="modal-backdrop" id="modalBackdrop" hidden>
+  <div class="modal" role="dialog" aria-modal="true">
+    <header class="modal-head">
+      <h3 id="modalTitle">Create</h3>
+      <button class="icon-btn" id="modalClose" aria-label="Close">✕</button>
+    </header>
+    <div class="modal-body" id="modalBody"></div>
+    <footer class="modal-foot" id="modalFoot"></footer>
+  </div>
+</div>
+
+<!-- ============ DRAWER (record detail) ============ -->
+<div class="drawer-backdrop" id="drawerBackdrop" hidden>
+  <aside class="drawer" id="drawer"></aside>
+</div>
+
+<div class="toast-stack" id="toasts"></div>
+
+<script src="/static/app.js"></script>
+</body>
+</html>
