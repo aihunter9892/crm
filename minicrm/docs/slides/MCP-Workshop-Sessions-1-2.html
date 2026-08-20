@@ -1,0 +1,1201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Build Once. Expose Everywhere. — Sessions 1 &amp; 2</title>
+<style>
+:root{
+  --ink:#2D2D2D; --ink-soft:#5A5A5A; --ink-light:#8A8A8A;
+  --purple:#9B7FBE; --purple-deep:#6B4E96; --purple-soft:#EDE5F7; --purple-line:#C5B3DC;
+  --yellow:#FFD93D; --yellow-soft:#FFF4B8; --yellow-deep:#E5BA1F;
+  --green:#7CB87C; --green-deep:#5A9C5A; --green-soft:#F0F8F0;
+  --red:#D67373; --red-soft:#FBEEEE;
+  --amber:#E8A547; --amber-soft:#FEF7E8;
+  --code-bg:#F6F2FB; --card-line:#E4DAEF;
+  --font: "Segoe UI", Calibri, system-ui, -apple-system, sans-serif;
+  --mono: Consolas, "Cascadia Mono", monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:#221A33;font-family:var(--font);color:var(--ink);overflow:hidden}
+
+/* ---------- stage ---------- */
+#stage{position:fixed;inset:0;display:grid;place-items:center}
+#deck{width:1280px;height:720px;transform-origin:center center;position:relative;
+      background:#fff;box-shadow:0 30px 90px rgba(0,0,0,.55);border-radius:6px;overflow:hidden}
+.slide{position:absolute;inset:0;padding:44px 52px 56px;display:none;flex-direction:column;background:#fff}
+.slide.on{display:flex;animation:fade .18s ease}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* ---------- chrome ---------- */
+.dots{position:absolute;top:30px;left:52px;display:flex;gap:6px}
+.dots i{width:11px;height:11px;border-radius:50%;display:block}
+.dots i:first-child{background:var(--yellow)} .dots i:last-child{background:var(--purple)}
+.badge{position:absolute;top:26px;right:52px;background:var(--purple-soft);color:var(--purple-deep);
+       font-size:11px;font-weight:700;letter-spacing:1.3px;padding:6px 14px;border-radius:20px}
+.foot{position:absolute;left:52px;right:52px;bottom:20px;display:flex;justify-content:space-between;
+      font-size:11px;color:var(--ink-light)}
+.foot b{font-weight:700}
+
+h1{font-size:34px;margin:26px 0 0;letter-spacing:-.4px;line-height:1.15}
+.sub{font-size:16px;color:var(--purple-deep);font-style:italic;margin:8px 0 0}
+.body{flex:1;margin-top:22px;min-height:0}
+
+/* ---------- primitives ---------- */
+.card{border:1.5px solid var(--card-line);border-radius:14px;padding:18px 20px;background:#fff;
+      box-shadow:0 2px 10px rgba(107,78,150,.07)}
+.card.p{border-color:var(--purple-deep);border-width:2px}
+.card.g{border-color:var(--green-deep);border-width:2px;background:var(--green-soft)}
+.card.r{border-color:var(--red);border-width:2px;background:var(--red-soft)}
+.card.y{border-color:var(--yellow-deep);border-width:2px;background:var(--yellow-soft)}
+.card.v{border-color:var(--purple-deep);border-width:2px;background:var(--purple-soft)}
+.lbl{font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--purple-deep);margin:0 0 10px}
+.lbl.r{color:var(--red)} .lbl.g{color:var(--green-deep)} .lbl.y{color:var(--yellow-deep)}
+.pill{display:inline-block;background:var(--red);color:#fff;font-size:11px;font-weight:800;
+      letter-spacing:1.2px;padding:5px 13px;border-radius:14px}
+.pill.g{background:var(--green-deep)} .pill.p{background:var(--purple-deep)}
+.pill.y{background:var(--yellow);color:var(--ink)}
+
+ul{margin:0;padding:0;list-style:none}
+li{font-size:15px;line-height:1.5;margin:0 0 9px;padding-left:22px;position:relative}
+li::before{content:"➤";position:absolute;left:0;color:var(--purple);font-size:12px;top:2px}
+ul.ok li::before{content:"✓";color:var(--green-deep);font-weight:800}
+ul.no li::before{content:"✗";color:var(--red);font-weight:800}
+li.dim{color:var(--ink-soft)}
+
+pre{background:var(--code-bg);border:1px solid var(--purple-line);border-radius:10px;
+    padding:14px 16px;font-family:var(--mono);font-size:14px;line-height:1.5;margin:0;
+    white-space:pre;overflow:hidden;color:var(--ink)}
+pre.sm{font-size:12px} pre.xs{font-size:11px} pre.lg{font-size:16px}
+code{font-family:var(--mono);background:var(--code-bg);padding:1px 5px;border-radius:4px;font-size:.94em}
+
+.callout{background:var(--yellow-soft);border:1.5px solid var(--yellow);border-radius:12px;
+         padding:13px 18px;text-align:center;font-size:15px;font-weight:600;line-height:1.45}
+.underline{height:9px;background:var(--yellow);opacity:.75;border-radius:5px;margin-top:-14px}
+
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.g2u{display:grid;grid-template-columns:1.25fr 1fr;gap:16px}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.g6{display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:1fr 1fr;gap:14px}
+.rows{display:flex;flex-direction:column;gap:9px}
+.row{display:grid;align-items:center;border:1.4px solid var(--card-line);border-radius:11px;padding:11px 16px;gap:14px}
+
+.num{width:40px;height:40px;border-radius:50%;background:var(--yellow);border:1.5px solid var(--yellow-deep);
+     display:grid;place-items:center;font-weight:800;font-size:18px;flex:0 0 40px}
+.ico{width:46px;height:46px;border-radius:50%;background:var(--purple-soft);display:grid;place-items:center;
+     font-size:20px;flex:0 0 46px;border:1.5px solid var(--purple)}
+.flex{display:flex;gap:13px;align-items:flex-start}
+
+/* ---------- title slides ---------- */
+.title-slide{padding:0;flex-direction:row}
+.wash{width:34%;background:var(--purple-soft);position:relative;display:grid;place-items:center}
+.title-right{flex:1;padding:64px 56px;display:flex;flex-direction:column;justify-content:center}
+.title-right h2{font-size:56px;line-height:1.05;margin:0;letter-spacing:-1.5px}
+.title-right h2 span{color:var(--purple-deep)}
+.tagline{font-size:20px;color:var(--ink-soft);font-style:italic;margin:24px 0 0}
+.setup{font-size:16px;line-height:1.7;margin:26px 0 0}
+.setup b{color:var(--purple-deep)}
+.credit{font-size:12px;color:var(--ink-light);margin-top:auto}
+.hub{position:relative;width:280px;height:280px}
+.hub .core{position:absolute;left:90px;top:90px;width:100px;height:100px;border-radius:50%;
+           background:var(--yellow);border:3px solid var(--purple-deep);display:grid;place-items:center;
+           font-weight:800;font-size:14px;color:var(--purple-deep);letter-spacing:1px}
+.hub .sp{position:absolute;background:#fff;border:2px solid var(--purple-deep);border-radius:9px;
+         padding:7px 0;width:82px;text-align:center;font-size:12px;font-weight:800;color:var(--purple-deep)}
+.hub svg{position:absolute;inset:0}
+
+/* ---------- closing ---------- */
+.closing{background:var(--purple-soft);align-items:center;justify-content:center;text-align:center}
+.closing .box{background:#fff;border:3px solid var(--purple-deep);border-radius:18px;padding:46px 54px;max-width:1000px}
+.closing h2{font-size:36px;line-height:1.3;margin:0}
+.closing h2 span{color:var(--purple-deep)}
+.closing .q{font-size:18px;color:var(--ink-soft);font-style:italic;margin-top:34px}
+
+/* ---------- notes panel ---------- */
+#notes{position:fixed;right:0;top:0;bottom:0;width:430px;background:#160F22;color:#E8E2F5;
+       padding:26px 26px 60px;overflow:auto;font-size:14.5px;line-height:1.65;
+       border-left:3px solid var(--purple-deep);transform:translateX(100%);transition:.22s;z-index:20}
+#notes.on{transform:none}
+#notes h3{margin:0 0 6px;font-size:12px;letter-spacing:1.6px;color:var(--yellow);text-transform:uppercase}
+#notes .t{font-size:17px;font-weight:700;margin:0 0 16px;color:#fff;line-height:1.3}
+#notes p{margin:0 0 14px;white-space:pre-wrap}
+#notes .time{position:sticky;bottom:-26px;margin:18px -26px -60px;padding:14px 26px;background:#0F0A18;
+             font-size:12px;color:var(--purple-line);border-top:1px solid #2E2340}
+
+/* ---------- hud ---------- */
+#hud{position:fixed;left:16px;bottom:14px;color:#BCAEDA;font-size:12.5px;z-index:20;
+     background:rgba(20,13,32,.82);padding:8px 15px;border-radius:20px;letter-spacing:.3px}
+#hud b{color:#fff;font-weight:700}
+#hud kbd{background:#2E2340;border-radius:4px;padding:1px 6px;font-family:var(--mono);font-size:11px;margin:0 1px}
+#help{position:fixed;inset:0;background:rgba(15,10,24,.93);color:#EDE7F8;display:none;place-items:center;z-index:40}
+#help.on{display:grid}
+#help div{max-width:460px;font-size:15px;line-height:2.1}
+#help kbd{background:#33264A;border-radius:5px;padding:2px 9px;font-family:var(--mono);
+          font-size:13px;min-width:78px;display:inline-block;text-align:center;margin-right:14px}
+
+@media print{
+  html,body{overflow:visible;background:#fff}
+  #stage{position:static;display:block}
+  #deck{width:100%;height:auto;box-shadow:none;transform:none!important}
+  .slide{display:flex!important;position:relative;page-break-after:always;
+         width:1280px;height:720px;transform-origin:top left}
+  #hud,#notes,#help{display:none!important}
+}
+</style>
+</head>
+<body>
+
+<div id="stage"><div id="deck"></div></div>
+
+<aside id="notes">
+  <h3>Speaker notes</h3>
+  <div class="t" id="nTitle"></div>
+  <div id="nBody"></div>
+  <div class="time" id="nTime"></div>
+</aside>
+
+<div id="hud"><b><span id="cur">1</span> / 28</b> &nbsp;·&nbsp; <kbd>→</kbd> next &nbsp; <kbd>N</kbd> notes &nbsp; <kbd>?</kbd> help</div>
+
+<div id="help"><div>
+  <kbd>→ / Space</kbd> next slide<br>
+  <kbd>←</kbd> previous slide<br>
+  <kbd>N</kbd> toggle speaker notes<br>
+  <kbd>F</kbd> fullscreen<br>
+  <kbd>Home / End</kbd> first / last slide<br>
+  <kbd>1…9</kbd> jump to slide<br>
+  <kbd>Ctrl+P</kbd> print all slides to PDF<br>
+  <kbd>? / Esc</kbd> close this help
+</div></div>
+
+<script>
+/* ============================================================
+   Slide content. Each entry: { badge, html, notes, time }
+   Content mirrors MCP-Workshop-Sessions-1-2.pptx slide for slide.
+   ============================================================ */
+const SLIDES = [
+{
+  badge: null, cls: "title-slide", time: "1 min",
+  title: "Title",
+  html: `
+  <div class="wash">
+    <div class="hub">
+      <svg viewBox="0 0 280 280">
+        <g stroke="#9B7FBE" stroke-width="2" stroke-dasharray="5 5">
+          <line x1="140" y1="140" x2="52" y2="52"/><line x1="140" y1="140" x2="228" y2="52"/>
+          <line x1="140" y1="140" x2="52" y2="228"/><line x1="140" y1="140" x2="228" y2="228"/>
+        </g>
+      </svg>
+      <div class="core">CORE</div>
+      <div class="sp" style="left:11px;top:36px">CLI</div>
+      <div class="sp" style="right:11px;top:36px">WEB</div>
+      <div class="sp" style="left:11px;bottom:36px">MCP</div>
+      <div class="sp" style="right:11px;bottom:36px">SKILL</div>
+    </div>
+  </div>
+  <div class="title-right">
+    <h2>Build Once.<br><span>Expose<br>Everywhere.</span></h2>
+    <div class="underline" style="width:300px;margin-top:14px"></div>
+    <div class="tagline">"From a normal app, to an app an AI agent can operate."</div>
+    <div class="setup">
+      Sessions 1 &amp; 2 · we build a real CRM.<br>
+      Then we give it a second interface without touching its logic.<br><br>
+      <b>By Session 6, an AI agent runs the whole thing.</b>
+    </div>
+    <div class="credit">Sessions 1 &amp; 2 · MCP Workshop · Skillopedia × Claude Code</div>
+  </div>`,
+  notes: `Keep this slide up for 20 seconds only. Do not introduce yourself yet — the demo on slide 3 earns their attention far faster than your bio does.
+
+If you want one opening line: "By the end of this course, an AI agent will run a CRM for you. Today we build the CRM."`
+},
+
+{
+  badge: "PART A · WHY", time: "2 min",
+  title: "You Are Asking the Wrong Question",
+  html: `
+  <h1>You Are Asking the Wrong Question</h1>
+  <div class="sub">And that is fine — almost everyone starts here.</div>
+  <div class="body">
+    <div class="g2" style="height:76%">
+      <div class="card r">
+        <span class="pill">WRONG QUESTION</span>
+        <div style="font-size:24px;font-weight:800;margin:16px 0 18px;line-height:1.3">
+          "Should I learn MCP,<br>or Skills, or build a CLI?"</div>
+        <ul><li class="dim">The answer changes every few months</li>
+            <li class="dim">You rebuild your work each time it changes</li>
+            <li class="dim">You are always behind</li></ul>
+      </div>
+      <div class="card g">
+        <span class="pill g">RIGHT QUESTION</span>
+        <div style="font-size:24px;font-weight:800;margin:16px 0 18px;line-height:1.3">
+          "How do I build one thing<br>that works everywhere?"</div>
+        <ul class="ok"><li class="dim">The answer does not change</li>
+            <li class="dim">New tool arrives, you add one small file</li>
+            <li class="dim">Everything you already built keeps working</li></ul>
+      </div>
+    </div>
+    <div class="callout" style="margin-top:16px">
+      Today we are not learning a tool. We are learning a shape you can pour any tool into.</div>
+  </div>`,
+  notes: `Show of hands: who has HEARD of MCP? Who has BUILT one? Usually many hands for the first, almost none for the second. That gap is the whole reason for this course.
+
+Say plainly: MCP was the hot thing, then Skills arrived, and something else arrives next year. If you rebuild your work every time, you lose. So we learn the shape, not the tool.
+
+Do not define MCP yet. Deliberately. They get the demo first.`
+},
+
+{
+  badge: "PART A · LIVE DEMO", time: "4 min",
+  title: "🔥 Live Demo — Here Is a CRM",
+  html: `
+  <h1>🔥 Live Demo — Here Is a CRM</h1>
+  <div class="underline" style="width:430px;margin-top:6px"></div>
+  <div class="sub">Nothing about AI yet. Just watch it work.</div>
+  <div class="body g2">
+    <div class="card p">
+      <div class="lbl">DO THIS ON THE PROJECTOR</div>
+      <ul>
+        <li>Dashboard — read one number out loud</li>
+        <li>Pipeline — drag a deal card to another column</li>
+        <li>Accounts — click a row, show the drawer</li>
+        <li>Leads — click <b>Convert</b>, show it created an account, a contact <i>and</i> a deal</li>
+      </ul>
+      <pre class="sm" style="margin-top:14px">http://127.0.0.1:8000</pre>
+    </div>
+    <div class="card y">
+      <div class="lbl y">SAY THIS AFTERWARDS</div>
+      <div style="font-size:17px;font-style:italic;line-height:1.75">
+        "This is an ordinary business application.<br><br>
+         No AI anywhere in it.<br><br>
+         Remember what I just did with my hands —<br>
+         by the end of this course, an AI agent<br>will be doing all of it."</div>
+    </div>
+  </div>`,
+  notes: `Switch to the browser NOW. Do not explain architecture. Use the app like a salesperson would.
+
+Order matters. Dashboard first (numbers feel real), then the kanban drag (movement holds attention), then a record drawer (depth), then Convert (the wow — three records created from one click).
+
+Do not talk about code during this. Three minutes of pure product.`
+},
+
+{
+  badge: "PART A · THE TRAP", time: "2 min",
+  title: "The Trap: Writing the Same Logic Four Times",
+  html: `
+  <h1>The Trap: Writing the Same Logic Four Times</h1>
+  <div class="sub">This is what most people do the week they discover MCP.</div>
+  <div class="body">
+    <div class="g2">
+      <pre>CLI
+  └── CRM logic
+
+Local MCP
+  └── CRM logic
+
+Remote MCP
+  └── CRM logic
+
+Skill
+  └── CRM logic</pre>
+      <div class="card r">
+        <div class="lbl r">WHAT THIS COSTS YOU</div>
+        <ul class="no">
+          <li>Four copies of every business rule</li>
+          <li>Four places to fix every bug</li>
+          <li>They drift apart within a month</li>
+          <li>You will forget one. Everyone does.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="callout" style="margin-top:18px;text-align:left">
+      Ask the room: <i>"Your company changes its discount rule. How many files do you edit in this picture?"</i><br>
+      Answer: four. And the one you forget is the one production uses.</div>
+  </div>`,
+  notes: `This is genuinely what happens. People already have an app, then they discover MCP, and they write the MCP server as a NEW project — re-implementing the logic inside it.
+
+Ask the discount-rule question and wait for an answer. Do not answer it yourself. Someone will say "four" and the room will wince.
+
+Optional real example: mention any system at your company that has a web version and a batch job with subtly different rules. Every room has one.`
+},
+
+{
+  badge: "PART A · THE SHAPE", time: "3 min",
+  title: "The Shape We Build Instead",
+  html: `
+  <h1>The Shape We Build Instead</h1>
+  <div class="sub">Copy this into your notes. You will see it in every session.</div>
+  <div class="body" style="display:flex;flex-direction:column;align-items:center">
+    <div class="card" style="border:3px solid var(--purple-deep);background:var(--yellow-soft);
+         width:330px;text-align:center;padding:13px">
+      <div style="font-size:20px;font-weight:800;color:var(--purple-deep);letter-spacing:1px">SHARED CORE</div>
+      <div style="font-size:13px;color:var(--ink-soft);font-style:italic">all business logic · one copy</div>
+    </div>
+    <svg width="1000" height="42" style="display:block">
+      <g stroke="#C5B3DC" stroke-width="1.6" stroke-dasharray="5 5">
+        <line x1="500" y1="0" x2="110" y2="42"/><line x1="500" y1="0" x2="305" y2="42"/>
+        <line x1="500" y1="0" x2="500" y2="42"/>
+        <line x1="500" y1="0" x2="695" y2="42"/><line x1="500" y1="0" x2="890" y2="42"/>
+      </g>
+    </svg>
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:11px;width:100%">
+      ${["CLI|terminal|humans|g","WEB / REST|browser|humans|g","LOCAL MCP|Claude Code|coding agents|p",
+         "REMOTE MCP|ChatGPT|cloud agents|p","SKILL|instructions|any agent|y"].map(x=>{
+        const [t,w,s,c]=x.split("|");
+        const done = c==="g";
+        return `<div class="card ${c==='y'?'':''}" style="text-align:center;padding:14px 8px;border-width:${done?2:1.4}px;
+                border-color:var(--${c==='g'?'green-deep':c==='y'?'yellow-deep':'purple-deep'})">
+          <div style="font-size:14px;font-weight:800;color:var(--${c==='g'?'green-deep':c==='y'?'yellow-deep':'purple-deep'})">${t}</div>
+          <div style="font-family:var(--mono);font-size:12px;margin:5px 0 3px">${w}</div>
+          <div style="font-size:12px;color:var(--ink-light);font-style:italic">${s}</div>
+          <div style="margin-top:9px;font-size:10.5px;font-weight:800;letter-spacing:1px;
+               background:var(--${done?'green-soft':'purple-soft'});color:var(--${done?'green-deep':'purple'});
+               border-radius:12px;padding:4px 0">${done?"TODAY":"LATER"}</div>
+        </div>`}).join("")}
+    </div>
+    <div class="callout" style="margin-top:auto;width:100%;font-size:17px">
+      The core owns the <b>CAPABILITY</b>. &nbsp; The adapter owns the <b>INTERFACE</b>.</div>
+  </div>`,
+  notes: `Draw this on the whiteboard while you talk — do not just project it. Make them copy it into their notes. It reappears in every session.
+
+The one line to repeat until they are bored of it: "The core owns the capability. The adapter owns the interface."
+
+Define adapter now, in one sentence: an adapter reads input, calls one core function, prints the result. Nothing else.
+
+Point at the two green TODAY boxes. That is the whole scope of Sessions 1 and 2.`
+},
+
+{
+  badge: "PART A · MAP", time: "3 min",
+  title: "Five Doors Into the Same Room",
+  html: `
+  <h1>Five Doors Into the Same Room</h1>
+  <div class="sub">Different users, different protocols, identical logic behind them.</div>
+  <div class="body">
+    <div class="row" style="border:none;padding:0 16px 8px;grid-template-columns:2.2fr 3fr 2.2fr 2fr">
+      <div class="lbl" style="margin:0">INTERFACE</div><div class="lbl" style="margin:0">WHO USES IT</div>
+      <div class="lbl" style="margin:0">HOW IT TALKS</div><div class="lbl" style="margin:0">WHEN WE BUILD IT</div>
+    </div>
+    <div class="rows">
+      ${[["Web / REST","humans","browser","Session 1","green-deep"],
+         ["CLI","humans","terminal","Session 2","green-deep"],
+         ["Local MCP","coding agents on your laptop","STDIO","Session 3","purple-deep"],
+         ["Remote MCP","ChatGPT, Claude on the web","HTTP","Session 4","purple"],
+         ["Skill","any agent","instructions","Session 5","yellow-deep"],
+         ["SHARED CORE","all of them","the actual logic","built today","ink"]].map((r,i)=>{
+        const last = i===5;
+        return `<div class="row" style="grid-template-columns:2.2fr 3fr 2.2fr 2fr;
+          ${last?'border-color:var(--purple-deep);border-width:2px;background:var(--yellow-soft)':''}">
+          <div style="font-weight:800;font-size:15px;color:var(--${r[4]})">${r[0]}</div>
+          <div style="font-size:14px">${r[1]}</div>
+          <div style="font-family:var(--mono);font-size:13.5px;color:var(--ink-soft)">${r[2]}</div>
+          <div style="font-size:14px;font-style:italic;${last?'font-weight:800;color:var(--purple-deep)':'color:var(--ink-soft)'}">${r[3]}</div>
+        </div>`}).join("")}
+    </div>
+  </div>`,
+  notes: `Read the table across, one row at a time. Do not rush it — this is the map for the whole course.
+
+Someone will ask "why is Remote MCP separate from Local MCP?" Answer it in one line before they ask: ChatGPT runs in a data centre. It cannot reach a program running on your laptop. That is the ONLY reason. Same code, different door.
+
+Emphasise the last row. Everything above it is a door. The last row is the room.`
+},
+
+{
+  badge: "PART B · THE APPLICATION", time: "4 min",
+  title: "What Is a CRM? (assume nobody knows)",
+  html: `
+  <h1>What Is a CRM? <span style="color:var(--ink-light);font-size:24px">(assume nobody knows)</span></h1>
+  <div class="sub">It tracks WHO you are selling to, and WHAT you promised to do next.</div>
+  <div class="body" style="display:flex;flex-direction:column">
+    <div class="g6" style="flex:1">
+      ${[["LEAD","A stranger who might buy. Not qualified yet.","✦","purple"],
+         ["ACCOUNT","A company that is now a real prospect or customer.","▦","purple-deep"],
+         ["CONTACT","A person who works at that company.","☺","purple"],
+         ["DEAL","One opportunity. Has a value and a stage.","◈","yellow-deep"],
+         ["TASK","Something you must do, by a date.","✓","green-deep"],
+         ["ACTIVITY","Something that already happened. Call, email, meeting.","◷","ink-soft"]]
+        .map(([t,d,i,c])=>`
+        <div class="card flex" style="border-color:var(--${c})">
+          <div class="ico" style="border-color:var(--${c});color:var(--${c})">${i}</div>
+          <div><div style="font-weight:800;font-size:17px">${t}</div>
+               <div style="font-size:13.5px;color:var(--ink-soft);margin-top:4px;line-height:1.45">${d}</div></div>
+        </div>`).join("")}
+    </div>
+    <div class="callout" style="margin-top:14px;font-size:14px;font-weight:500">
+      Priya gets a card at a conference → <b>LEAD</b>. Call goes well → convert it → <b>ACCOUNT + CONTACT + DEAL</b>.
+      Logs the call → <b>ACTIVITY</b>. Sends pricing Friday → <b>TASK</b>.</div>
+  </div>`,
+  notes: `Do NOT assume they know this. Half the room has never opened Salesforce or Zoho, and CRM vocabulary is the biggest silent blocker in this session.
+
+Tell the Priya story out loud, exactly as written in the callout, pointing at each card as you name it. Then reuse Priya for the rest of the day — same character, same deal, every example.
+
+The distinction people find hardest: TASK is in the future, ACTIVITY is in the past. Say that explicitly.`
+},
+
+{
+  badge: "PART B · THE ONE BIG RULE", time: "3 min",
+  title: "The Pipeline: Six Stages, One Rule",
+  html: `
+  <h1>The Pipeline: Six Stages, One Rule</h1>
+  <div class="sub">Every deal sits in exactly one stage. The stage sets the probability.</div>
+  <div class="body">
+    <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px">
+      ${[["qualification","10%","purple",""],["needs_analysis","25%","purple",""],
+         ["proposal","50%","yellow-deep",""],["negotiation","75%","yellow-deep",""],
+         ["closed_won","100%","green-deep","green-soft"],["closed_lost","0%","red","red-soft"]]
+        .map(([n,p,c,bg])=>`
+        <div class="card" style="border-color:var(--${c});text-align:center;padding:12px 6px;
+             ${bg?`background:var(--${bg})`:''}">
+          <div style="font-family:var(--mono);font-size:12px;font-weight:700;line-height:1.3">${n}</div>
+          <div style="font-size:26px;font-weight:800;color:var(--${c});margin-top:6px">${p}</div>
+        </div>`).join("")}
+    </div>
+    <div class="g2" style="margin-top:18px">
+      <div class="card p"><div class="lbl">WHY THIS MATTERS</div>
+        <ul><li>The kanban board is literally these six columns</li>
+            <li>The forecast is <code>amount × probability</code></li>
+            <li>Every report groups by this field</li></ul></div>
+      <div class="card r"><div class="lbl r">AND ONE EXTRA RULE</div>
+        <div style="font-size:15px;line-height:1.55">Moving a deal to <code>closed_lost</code> requires a reason.
+        <br><br>Hold on to that rule. You will see it enforced in <b>three different places</b> today —
+        and written <b>exactly once</b>.</div></div>
+    </div>
+  </div>`,
+  notes: `This is the single most important business rule in the application. Everything downstream depends on it: the board, the forecast, every report.
+
+The closed_lost rule is your running thread for the whole day. Flag it here, enforce it on slide 16 in the terminal, then drag a card into Closed Lost in the browser and watch it demand a reason there too. Then reveal it is one if-statement in core/deals.py.
+
+If someone asks why probability is fixed per stage rather than per deal: real CRMs allow both. We fixed it to keep the example small.`
+},
+
+{
+  badge: "PART B · DATA MODEL", time: "3 min",
+  title: "Seven Tables. That Is the Whole Database.",
+  html: `
+  <h1>Seven Tables. That Is the Whole Database.</h1>
+  <div class="sub">Small on purpose — the lesson is the architecture, not the schema.</div>
+  <div class="body">
+    <div class="g2u">
+      <pre>users
+  |
+accounts ------&lt; contacts
+  |                 |
+  +------&lt; deals &gt;--+
+
+leads  --(convert)--&gt;  account + contact + deal
+
+tasks       -&gt;  can attach to any of the four
+activities  -&gt;  can attach to any of the four</pre>
+      <div class="card y">
+        <div class="lbl y">WATCH THIS ARROW</div>
+        <div style="font-family:var(--mono);font-size:16px;font-weight:800;color:var(--purple-deep)">
+          leads --(convert)--&gt;</div>
+        <div style="font-size:14px;line-height:1.6;margin-top:12px">
+          One click that creates three records and updates a fourth.<br><br>
+          It is the most interesting function in the codebase.<br><br>
+          We come back to it twice today — and again in Session 3, when an AI agent triggers it with one sentence.</div>
+      </div>
+    </div>
+    <div class="callout" style="margin-top:18px;font-size:14px">
+      Tasks and activities point at <i>any</i> record type. That is why they carry a
+      <code>related_type</code> plus a <code>related_id</code>.</div>
+  </div>`,
+  notes: `Keep this fast. They do not need to memorise the schema — they need to know it is small.
+
+Point at the convert arrow and say: "Hold on to that one." Setting up a callback you pay off on slide 17 is worth more than explaining it now.
+
+If someone asks about related_type/related_id: yes, in a large system you would model this differently. We chose the simple version so the whole schema fits on one slide.`
+},
+
+{
+  badge: "PART B · CODE TOUR", time: "4 min",
+  title: "Open the Folder. Look at the Sizes.",
+  html: `
+  <h1>Open the Folder. Look at the Sizes.</h1>
+  <div class="sub">The biggest folder is core/. The API is surprisingly small.</div>
+  <div class="body g2u">
+    <pre class="sm">minicrm/
+├── core/          &lt;- ALL the business logic. One copy.
+│   ├── models.py      the contract: what a valid record is
+│   ├── db.py          SQLite tables
+│   ├── errors.py      structured errors
+│   ├── accounts.py  contacts.py  leads.py
+│   ├── deals.py     tasks.py     activities.py
+│   └── analytics.py   dashboard numbers
+│
+├── web/           &lt;- ADAPTER 1: REST API + browser UI
+├── cli.py         &lt;- ADAPTER 2: terminal
+└── seed.py           demo data</pre>
+    <div class="card p">
+      <div class="lbl">ASK THE ROOM</div>
+      <div style="font-size:18px;font-weight:800;line-height:1.4">"If I delete the <code>web/</code> folder,<br>does the CRM still work?"</div>
+      <div style="font-size:13px;color:var(--ink-light);font-style:italic;margin-top:8px">Let them argue for 30 seconds.</div>
+      <div style="display:inline-block;margin-top:16px;background:var(--green-soft);color:var(--green-deep);
+           border:2px solid var(--green-deep);border-radius:10px;padding:7px 18px;font-weight:800">✓ &nbsp;YES</div>
+      <div style="font-size:14px;line-height:1.6;margin-top:14px">
+        The capability survives. Only one door closes.<br><br>
+        That is the whole test of whether your architecture is right.</div>
+    </div>
+  </div>`,
+  notes: `Open the actual folder in your editor while you talk. Seeing real file sizes beats a slide.
+
+Open web/app.py and scroll it fast — 40 routes, under 300 lines. Then open core/deals.py and let them see the density difference.
+
+Ask the delete-the-web-folder question and genuinely wait. Someone will say "no, the website IS the app" — that is the misconception you are here to fix.`
+},
+
+{
+  badge: "PART B · THE RULE", time: "3 min",
+  title: "What an Adapter Is Allowed to Do",
+  html: `
+  <h1>What an Adapter Is Allowed to Do</h1>
+  <div class="sub">Recite this tomorrow morning. It is the whole course in three lines.</div>
+  <div class="body">
+    <div class="g3">
+      ${[["1","READ","Take what the user sent.<br>A form post, a CLI flag,<br>a tool call from an agent."],
+         ["2","CALL","Call exactly <b>ONE</b> function<br>in <code>core/</code>.<br>Not two. Not a chain."],
+         ["3","RETURN","Print it, render it,<br>or hand it back as JSON.<br>No decisions here."]]
+        .map(([n,t,d])=>`
+        <div class="card p">
+          <div class="flex" style="align-items:center">
+            <div class="num">${n}</div>
+            <div style="font-size:21px;font-weight:800;color:var(--purple-deep);letter-spacing:1px">${t}</div>
+          </div>
+          <div style="font-size:14.5px;line-height:1.65;margin-top:14px">${d}</div>
+        </div>`).join("")}
+    </div>
+    <div class="card r" style="margin-top:18px">
+      <div class="lbl r">THE COUNTER-EXAMPLE — SAY THIS OUT LOUD</div>
+      <div style="font-size:15px;line-height:1.6">
+        If you catch yourself writing <code>if stage == "closed_lost": require a reason</code> inside a web route — stop.<br>
+        That rule belongs in the core, because the CLI needs it too, and next week the MCP server will need it as well.</div>
+    </div>
+  </div>`,
+  notes: `This is the rule they must be able to recite without notes. Say it three times during the day.
+
+The counter-example matters more than the rule. Abstract rules do not stick; "do not put the closed_lost check in your web route" sticks.
+
+If a learner asks "what if I need two core calls?" — good question. Answer: then the operation you actually want is a single core function that does both. That is exactly what convert_lead() is. Slide 17.`
+},
+
+{
+  badge: "PART B · PROOF", time: "4 min",
+  title: "Proof: Look at One Route",
+  html: `
+  <h1>Proof: Look at One Route</h1>
+  <div class="sub">This is the entire API endpoint for moving a deal.</div>
+  <div class="body">
+    <div class="lbl">web/app.py — THE ADAPTER</div>
+    <pre>@app.post("/api/deals/{deal_id}/stage")
+def move_deal_stage(deal_id: str, body: dict = Body(...)):
+    return deals.move_stage(deal_id, body["stage"], body.get("lost_reason"))</pre>
+    <div class="lbl" style="margin-top:20px">core/deals.py — WHERE THE THINKING LIVES</div>
+    <pre class="sm">def move_stage(deal_id, stage, lost_reason=None):
+    must_get("deals", deal_id, "Deal")                # does it exist?
+    target = DealStage(stage)                         # is the stage real?
+    if target is DealStage.closed_lost and not lost_reason:
+        raise ValidationFailed("lost_reason is required ...", field="lost_reason")
+    patch("deals", deal_id, {"stage": target.value,
+                             "probability": STAGE_PROBABILITY[target], ...})</pre>
+  </div>`,
+  notes: `Open web/app.py live and scroll through it. Let them see that EVERY route looks like the top block. One line of real work.
+
+Then open core/deals.py at move_stage() and read it slowly. Point at each guard: exists, valid stage, lost_reason rule, probability lookup.
+
+Land this line: "That is where the thinking lives. The route is a doorway."`
+},
+
+{
+  badge: "PART C · THE CORE", time: "4 min",
+  title: "A Schema Is a Contract, Not Paperwork",
+  html: `
+  <h1>A Schema Is a Contract, Not Paperwork</h1>
+  <div class="sub">A written description of what a valid record looks like — checked automatically.</div>
+  <div class="body">
+    <div class="g2u">
+      <pre class="sm">class DealIn(BaseModel):
+    name:        str   = Field(min_length=1)
+    account_id:  str
+    amount:      float = Field(default=0, ge=0)
+    stage:       DealStage = DealStage.qualification
+    probability: int | None = Field(default=None, ge=0, le=100)
+    close_date:  date | None = None</pre>
+      <div class="card p">
+        <div class="lbl">READ IT OUT LOUD</div>
+        <div style="font-size:14px;line-height:1.9">
+          <code>min_length=1</code><br>a deal must have a name<br><br>
+          <code>ge=0</code><br>amount cannot be negative<br><br>
+          <code>le=100</code><br>probability cannot be 150%</div>
+      </div>
+    </div>
+    <div class="card g" style="margin-top:18px">
+      <div style="font-size:15.5px;line-height:1.55">
+        <b style="color:var(--green-deep)">Nobody has to remember these rules.</b>
+        The code refuses bad data on its own — in the browser form, in the CLI, and later in an agent's tool call.
+        One definition, three enforcement points.</div>
+    </div>
+  </div>`,
+  notes: `Define the word for beginners: a schema is a written description of what a valid record looks like. Pydantic turns that description into a check that runs by itself.
+
+Walk each constraint. Do not skip ge=0 — "negative deal amount" gets a laugh and makes the point stick.
+
+If someone knows TypeScript, tell them Zod is the same idea in the JavaScript world. Do not go deeper than that.`
+},
+
+{
+  badge: "PART C · THE CORE", time: "4 min",
+  title: "Enums — The Most Underrated Line of Code",
+  html: `
+  <h1>Enums — The Most Underrated Line of Code</h1>
+  <div class="underline" style="width:560px;margin-top:6px"></div>
+  <div class="sub">A written list of the only values allowed. Six lines that carry the whole course.</div>
+  <div class="body">
+    <div class="g2">
+      <pre class="sm">class DealStage(str, Enum):
+    qualification  = "qualification"
+    needs_analysis = "needs_analysis"
+    proposal       = "proposal"
+    negotiation    = "negotiation"
+    closed_won     = "closed_won"
+    closed_lost    = "closed_lost"</pre>
+      <div class="card r">
+        <div class="lbl r">WITHOUT IT</div>
+        <ul class="no">
+          <li>Someone types <code>"Proposal "</code> with a capital P and a space</li>
+          <li>Your pipeline report silently splits into two columns</li>
+          <li>Nobody notices for a month</li>
+        </ul>
+      </div>
+    </div>
+    <div class="card v" style="margin-top:18px">
+      <div style="font-size:16px;line-height:1.75">
+        <b>TODAY</b> &nbsp;this enum fills a dropdown in a form.<br>
+        <b style="color:var(--purple-deep)">IN SESSION 4</b> &nbsp;the same enum stops an AI model from inventing a stage called
+        <code>"almost_won"</code>.<br>
+        <i style="color:var(--ink-soft);font-size:14.5px">Same guardrail. Two very different users. Written once.</i></div>
+    </div>
+  </div>`,
+  notes: `Everyone who has touched real data will nod at the "Proposal " example. Let that land before moving on.
+
+Then deliver the bottom card slowly. This is the thesis of the entire course compressed into two sentences: the discipline that protects a human form is the same discipline that protects an agent tool call.
+
+If you only have time to make ONE point land in Part C, make it this one.`
+},
+
+{
+  badge: "PART C · THE CORE", time: "4 min",
+  title: "Your Error Messages Are Part of Your Interface",
+  html: `
+  <h1>Your Error Messages Are Part of Your Interface</h1>
+  <div class="sub">Ask: which of these can someone fix without asking a colleague?</div>
+  <div class="body">
+    <div class="g2">
+      <div class="card r">
+        <span class="pill">BAD ERROR</span>
+        <pre style="margin-top:12px">Error: invalid input</pre>
+        <ul class="no" style="margin-top:14px">
+          <li>Which field?</li><li>What would have been valid?</li>
+          <li>A human asks a colleague. An agent guesses.</li>
+          <li>Guessing is where hallucinated tool calls come from.</li></ul>
+      </div>
+      <div class="card g">
+        <span class="pill g">GOOD ERROR</span>
+        <pre class="xs" style="margin-top:12px">{ "code": "validation_failed",
+  "message": "'almost_won' is not a
+              valid deal stage.",
+  "details": {
+    "field": "stage",
+    "allowed": ["qualification",
+      "needs_analysis", "proposal",
+      "negotiation", "closed_won",
+      "closed_lost"] } }</pre>
+        <ul class="ok" style="margin-top:12px"><li>Names the field. Lists every valid value.</li></ul>
+      </div>
+    </div>
+    <div class="callout" style="margin-top:16px">
+      In the age of agents, error messages are not error messages.<br>
+      They are documentation delivered at exactly the moment it is needed.</div>
+  </div>`,
+  notes: `Ask the question on the subtitle and wait. The answer is obvious, which is the point — nobody defends the bad error once they see them side by side.
+
+Then make the agent point: a model reads the good error and CORRECTS ITSELF on the next attempt. It reads the bad one and guesses again. Every hallucinated tool call you have seen started with an error message that taught the model nothing.
+
+Deliver the callout as the closing line, then go straight to the live demo on the next slide. Do not add commentary in between.`
+},
+
+{
+  badge: "PART C · LIVE DEMO", time: "5 min",
+  title: "🔥 Live Demo — Break It On Purpose",
+  html: `
+  <h1>🔥 Live Demo — Break It On Purpose</h1>
+  <div class="underline" style="width:520px;margin-top:6px"></div>
+  <div class="sub">Three commands that fail, and one drag in the browser that fails the same way.</div>
+  <div class="body">
+    <div class="lbl">RUN THESE IN THE TERMINAL, ONE AT A TIME</div>
+    <pre class="sm">python cli.py deals move dea_xxxx --stage almost_won      # invalid stage
+python cli.py deals move dea_xxxx --stage closed_lost     # missing reason
+python cli.py accounts show acc_nope                      # missing record</pre>
+    <div class="g2" style="margin-top:18px">
+      <div class="card p"><div class="lbl">WHAT THEY SHOULD NOTICE</div>
+        <ul class="ok"><li>Each error names the field</li>
+          <li>Invalid stage prints all six valid values</li>
+          <li>Missing record suggests how to find a real id</li></ul></div>
+      <div class="card y"><div class="lbl y">THEN SWITCH TO THE BROWSER</div>
+        <div style="font-size:14.5px;line-height:1.65">
+          Drag a deal card into <b>Closed Lost</b>. It asks for a reason there too.<br><br>
+          Ask: <i>"How many places is that rule written?"</i><br>
+          Then show them: <code>core/deals.py</code>, one if-statement.</div></div>
+    </div>
+  </div>`,
+  notes: `DO THIS LIVE. It is the highest-value three minutes in Part C.
+
+Get a real deal id first: python cli.py deals list --limit 3
+
+Run each failing command and let them READ the output on the projector before you say anything. Silence works here.
+
+Then the browser drag. Then the question. Wait for someone to say "one place." Then open core/deals.py and show the single if-statement — around line 100.
+
+If a command unexpectedly succeeds, you probably used a valid stage name. Check the spelling of almost_won.`
+},
+
+{
+  badge: "PART C · THE PAYOFF", time: "4 min",
+  title: "convert_lead() — One Operation, Many Callers",
+  html: `
+  <h1>convert_lead() — One Operation, Many Callers</h1>
+  <div class="sub">Five things that must happen together, in order, with a duplicate check in the middle.</div>
+  <div class="body">
+    <div class="g2u">
+      <pre class="sm">def convert_lead(lead_id, deal_name=None, deal_amount=0):
+    lead    = must_get("leads", lead_id, "Lead")
+    account = accounts.create_account(...)   # reuse if it exists
+    contact = contacts.create_contact(...)
+    deal    = deals.create_deal(...)         # optional
+    patch("leads", lead_id, {"status": "converted", ...})
+    return {"lead":…, "account":…, "contact":…, "deal":…}</pre>
+      <div class="card p"><div class="lbl">WHO CALLS IT</div>
+        <ul class="ok"><li>The browser — Convert button</li>
+          <li>The CLI — <code>leads convert</code></li>
+          <li>Session 3 — an MCP tool</li>
+          <li>Session 5 — a Skill, via the CLI</li></ul></div>
+    </div>
+    <div class="card y" style="margin-top:18px">
+      <div class="lbl y">SAY THIS OUT LOUD</div>
+      <div style="font-size:17px;font-style:italic">
+        "If this logic lived in the web route, we would be re-implementing it three more times before this course ends."</div>
+    </div>
+  </div>`,
+  notes: `This is the payoff for the arrow you flagged on slide 9.
+
+Name the concept: a MULTI-STEP BUSINESS OPERATION. Not a CRUD call — a sequence with rules inside it (reuse the account if the company already exists; refuse if the lead was already converted).
+
+In Session 3, an agent will trigger this entire chain from the sentence "convert that lead and open a deal for eight lakhs." Say that now — it builds anticipation for the next session.`
+},
+
+{
+  badge: "PART C · WRAP", time: "5 min",
+  title: "End of Session 1 — What We Have",
+  html: `
+  <h1>End of Session 1 — What We Have</h1>
+  <div class="sub">And, more importantly, what we deliberately have not done.</div>
+  <div class="body">
+    <div class="g2u">
+      <div class="card g"><div class="lbl g">WHAT WE HAVE</div>
+        <ul class="ok">
+          <li>A working CRM — 9 screens, 7 tables, ~40 API routes</li>
+          <li>All logic in <code>core/</code> — one copy, no duplication</li>
+          <li>Schemas with enums guarding every write</li>
+          <li>Structured errors that name the field and list valid values</li>
+          <li>A multi-step operation (<code>convert_lead</code>) written exactly once</li></ul></div>
+      <div class="card y"><div class="lbl y">WHAT WE HAVE NOT DONE</div>
+        <div style="font-size:26px;font-weight:800;color:var(--purple-deep);line-height:1.25">
+          Anything AI-related.<br>Not one line.</div>
+        <div style="font-size:14px;line-height:1.6;margin-top:14px">
+          Everything today was ordinary software engineering.<br><br>
+          That ordinary work is about 80% of what makes an application agent-ready.<br><br>
+          Most people skip it, then wonder why their MCP server is unreliable.</div></div>
+    </div>
+    <div class="callout" style="margin-top:16px">
+      Break here. Session 2 starts with a question: can we add a second interface without touching <code>core/</code> at all?</div>
+  </div>`,
+  notes: `Close Session 1 on the yellow card. Say the last bullet slowly — it is the most contrarian claim in the whole course, and it is true.
+
+Expect pushback: "so when do we get to the AI part?" Answer: next session we add the third interface, and the user is not a person. But if the core is wrong, the AI part fails in ways that are very hard to debug.
+
+Take a 10-minute break here.`
+},
+
+{
+  badge: "PART D · SESSION 2", time: "3 min",
+  title: "Why Build a CLI Before MCP?",
+  html: `
+  <h1>Why Build a CLI Before MCP?</h1>
+  <div class="sub">Because a CLI tests our claim using zero new concepts.</div>
+  <div class="body">
+    <div class="card v">
+      <div style="font-size:19px;line-height:1.7">
+        We claimed: &nbsp;<i>"Adding a new interface should be cheap."</i><br>
+        <b style="color:var(--purple-deep)">So let us add one — and see whether we have to touch <code>core/</code> even once.</b></div>
+    </div>
+    <div class="g2" style="margin-top:20px">
+      <div class="card r"><div class="lbl r">IF WE JUMPED STRAIGHT TO MCP</div>
+        <ul class="no"><li>New protocol, new SDK, new client setup</li>
+          <li>Something breaks — was it the architecture, or the protocol?</li>
+          <li>You cannot tell. So you learn nothing.</li></ul></div>
+      <div class="card g"><div class="lbl g">WITH A CLI FIRST</div>
+        <ul class="ok"><li>Boring, well-understood interface</li>
+          <li>If the architecture holds here, it holds for MCP</li>
+          <li>You test one variable at a time</li></ul></div>
+    </div>
+  </div>`,
+  notes: `This slide answers the impatient learner who wants MCP in the first hour.
+
+The framing that works: we are running an experiment, and good experiments change one variable at a time. The CLI changes the interface while holding the protocol boring.
+
+Optional aside for the experienced people in the room: this is also why you build a CLI first in real work — it is the cheapest way to find out that your service layer has the wrong shape.`
+},
+
+{
+  badge: "PART D · LIVE DEMO", time: "4 min",
+  title: "🔥 Live Demo — Same Numbers, Two Doors",
+  html: `
+  <h1>🔥 Live Demo — Same Numbers, Two Doors</h1>
+  <div class="underline" style="width:500px;margin-top:6px"></div>
+  <div class="sub">Browser on one half of the screen. Terminal on the other.</div>
+  <div class="body">
+    <pre class="lg">python cli.py dashboard</pre>
+    <div class="g2" style="margin-top:20px">
+      <div class="card p"><div class="lbl">WHAT TO DO</div>
+        <ul><li>Put the browser dashboard and the terminal side by side</li>
+          <li>Read one number off each</li><li>They match</li></ul></div>
+      <div class="card g"><div class="lbl g">WHY THEY MATCH</div>
+        <div style="font-size:14.5px;line-height:1.65">
+          They are the same number.<br><br>
+          One function — <code>analytics.dashboard()</code> — called from two places.<br><br>
+          The CLI does not call the web API. They are peers over one core.</div></div>
+    </div>
+    <div class="callout" style="margin-top:18px">
+      Nobody wrote sync code. There is nothing to keep in sync — there is only one copy of the calculation.</div>
+  </div>`,
+  notes: `DO THIS LIVE, side by side. The visual of two very different-looking screens showing the same rupee figure does more than any explanation.
+
+Pre-check before the session: run python cli.py dashboard once so the first run is not slowed by imports.
+
+Common question: "does the CLI call the API?" No. Answer clearly — they are siblings, not parent and child. Both import core/ directly. Draw two arrows into one box if it helps.`
+},
+
+{
+  badge: "PART D · HANDS-ON", time: "12 min",
+  title: "🛠️ Hands-On — Do Real Work in the Terminal",
+  html: `
+  <h1>🛠️ Hands-On — Do Real Work in the Terminal</h1>
+  <div class="underline" style="width:560px;margin-top:6px"></div>
+  <div class="sub">12 minutes · then refresh the browser and watch your work appear.</div>
+  <div class="body" style="display:flex;flex-direction:column">
+    <div style="margin:2px 0 12px"><span class="pill p">⏱ &nbsp;TIME: 12 MINUTES</span></div>
+    <div class="g6" style="flex:1">
+      ${[["1","Create an account","2 min",'python cli.py accounts create \\\n  --name "Orbit Foods" \\\n  --industry Retail'],
+         ["2","Copy the acc_ id","1 min","# the command printed:\n# id: acc_xxxxxxxx"],
+         ["3","Create a deal","3 min",'python cli.py deals create \\\n  --name "Orbit - pilot" \\\n  --account acc_xxxx --amount 800000'],
+         ["4","Move its stage","2 min","python cli.py deals move \\\n  dea_xxxx --stage proposal"],
+         ["5","Add a follow-up","2 min",'python cli.py tasks create \\\n  --subject "Send pricing" \\\n  --due 2026-09-30'],
+         ["6","Refresh the browser","2 min","# localhost:8000/#/pipeline\n# your deal is in Proposal"]]
+        .map(([n,t,tm,code])=>`
+        <div class="card" style="padding:12px 14px">
+          <div class="flex" style="align-items:center;gap:10px">
+            <div class="num" style="width:30px;height:30px;flex:0 0 30px;font-size:14px">${n}</div>
+            <div style="font-weight:800;font-size:14px;flex:1">${t}</div>
+            <div style="font-size:11px;color:var(--purple-deep);font-weight:700">${tm}</div>
+          </div>
+          <pre class="xs" style="margin-top:9px;padding:8px 10px;font-size:10.5px">${code.replace(/</g,"&lt;")}</pre>
+        </div>`).join("")}
+    </div>
+    <div class="card g" style="margin-top:12px;padding:11px;text-align:center;font-size:13.5px">
+      <b style="color:var(--green-deep);letter-spacing:1.2px">CHECKPOINT</b> &nbsp;
+      ✓ Account created · ✓ Deal created · ✓ Stage moved · ✓ Task added ·
+      <b style="color:var(--green-deep)">✓ All of it visible in the browser</b></div>
+  </div>`,
+  notes: `Demo steps 1-4 yourself first, slowly, copying each printed id into the next command. Then let them do all six.
+
+THE MOMENT: after step 6, pause. Let the room see their terminal work sitting in the browser kanban. Then ask: "How much integration code did I write to make the terminal and the browser agree?"
+
+Answer: none. They are not integrated. They share a core.
+
+Walk the room during this. The usual failure is pasting the acc_ id where a dea_ id belongs — the error message tells them exactly that, which is itself a teaching moment worth pointing out loudly.`
+},
+
+{
+  badge: "PART D · CODE", time: "4 min",
+  title: "Anatomy of One Command",
+  html: `
+  <h1>Anatomy of One Command</h1>
+  <div class="sub">Put this next to the web route from slide 12. Same shape, different clothes.</div>
+  <div class="body">
+    <div class="lbl">cli.py — ADAPTER 2</div>
+    <pre class="sm">@deals_app.command("move")
+def deals_move(deal_id: str, stage: str = ..., reason: str = None):
+    """Move a deal to another pipeline stage."""
+    rec = run(deals.move_stage, deal_id, stage, reason)      # &lt;- the only work
+    ok(f"'{rec['name']}' moved to {rec['stage']} ({rec['probability']}%).")</pre>
+    <div class="rows" style="margin-top:20px">
+      ${[["Where does the CLI learn that <code>proposal</code> means 50%?","It does not. It prints what the core hands back."],
+         ["Where is the <code>closed_lost</code> rule?","core/deals.py. The CLI never mentions it."],
+         ["How many core functions does this call?","Exactly one. That is the rule from slide 11."]]
+        .map(([q,a])=>`<div class="row" style="grid-template-columns:1fr;font-size:15px">
+          <div><b style="color:var(--purple-deep)">${q}</b> &nbsp; <i>${a}</i></div></div>`).join("")}
+    </div>
+  </div>`,
+  notes: `If your projector allows, put slide 12 and this slide side by side — or flip back and forth twice. The shape is identical: read, call one core function, print.
+
+Ask the three questions on the cards BEFORE revealing the answers. Cover them with a black box in presenter mode if you can.
+
+The run() wrapper is worth one sentence: it catches core errors and turns them into shell behaviour — printed details plus an exit code. It is plumbing, not logic.`
+},
+
+{
+  badge: "PART D · THE BRIDGE", time: "5 min",
+  title: "--json : The Bridge to Agents",
+  html: `
+  <h1><code style="font-size:32px">--json</code> : The Bridge to Agents</h1>
+  <div class="underline" style="width:470px;margin-top:6px"></div>
+  <div class="sub">One flag today. It is what makes this CLI agent-ready in Session 5.</div>
+  <div class="body">
+    <div class="g2">
+      <div class="card p"><div class="lbl">FOR A HUMAN</div>
+        <pre class="sm">python cli.py deals list</pre>
+        <div style="font-size:14px;color:var(--ink-soft);font-style:italic;margin-top:10px">
+          A pretty table with borders and colours.</div></div>
+      <div class="card g"><div class="lbl g">FOR A MACHINE</div>
+        <pre class="sm">python cli.py --json deals list</pre>
+        <div style="font-size:14px;color:var(--ink-soft);font-style:italic;margin-top:10px">
+          Clean JSON. Nothing to parse around.</div></div>
+    </div>
+    <div class="card y" style="margin-top:18px">
+      <div class="lbl y">WHY IT IS REALLY THERE</div>
+      <div style="font-size:15.5px;line-height:1.65">
+        In Session 5 we hand an agent a <b>Skill</b> — a short instruction file — that says:<br>
+        <i>"to read the CRM, run <code>python cli.py --json ...</code>"</i><br><br>
+        The agent runs it, reads the JSON, and acts. We will not write one line of agent-specific code to make that work.</div>
+    </div>
+    <div class="callout" style="margin-top:14px;font-size:14.5px">
+      Rule: every tool you build for humans should have a machine-readable mode.</div>
+  </div>`,
+  notes: `DO THIS LIVE. Run both commands back to back. The visual difference does the teaching — you barely need to speak over it.
+
+Then explain what it is really for. This is the moment the course's promise becomes concrete: they can see the path from "CLI I built today" to "AI agent using it in three sessions."
+
+Also run the error case: python cli.py --json accounts show acc_nope — structured JSON on stderr, exit code 1. Ties slide 15 and slide 24 together.`
+},
+
+{
+  badge: "PART D · PLUMBING", time: "4 min",
+  title: "Exit Codes — How Programs Talk to Programs",
+  html: `
+  <h1>Exit Codes — How Programs Talk to Programs</h1>
+  <div class="sub">Every command-line program returns a number when it finishes. Zero means success.</div>
+  <div class="body">
+    <div class="g3">
+      ${[["0","It worked","The operation completed.<br>Carry on.","green-deep","green-soft"],
+         ["1","A business rule said no","Not found, duplicate, invalid stage, missing lost_reason.","amber","amber-soft"],
+         ["2","The input was the wrong shape","A field failed validation before the core was reached.","red","red-soft"]]
+        .map(([c,t,d,col,bg])=>`
+        <div class="card" style="border:2px solid var(--${col});background:var(--${bg});text-align:center">
+          <div style="font-size:60px;font-weight:800;color:var(--${col});line-height:1">${c}</div>
+          <div style="font-size:16px;font-weight:800;margin-top:8px">${t}</div>
+          <div style="font-size:13.5px;color:var(--ink-soft);margin-top:6px;line-height:1.5">${d}</div>
+        </div>`).join("")}
+    </div>
+    <div class="lbl" style="margin-top:22px">SEE IT YOURSELF</div>
+    <pre class="sm">python cli.py deals move dea_xxxx --stage almost_won
+echo $LASTEXITCODE        # PowerShell
+echo $?                   # bash / zsh</pre>
+  </div>`,
+  notes: `For beginners, this is genuinely new information. Say it plainly: every command-line program returns a number when it finishes. Zero means success. Anything else means something went wrong. Scripts and agents branch on that number.
+
+Demo it if your shell cooperates. On PowerShell use $LASTEXITCODE; on bash use $?.
+
+Connect it forward: an agent running your CLI checks the exit code first, then reads the JSON. Both halves matter.`
+},
+
+{
+  badge: "PART D · EXERCISE", time: "15 min",
+  title: "🛠️ Your Turn — 15 Minutes",
+  html: `
+  <h1>🛠️ Your Turn — 15 Minutes</h1>
+  <div class="underline" style="width:340px;margin-top:6px"></div>
+  <div class="sub">Three tasks. The first one is timed on purpose.</div>
+  <div class="body" style="display:flex;flex-direction:column">
+    <div style="margin:2px 0 14px"><span class="pill p">⏱ &nbsp;TIME: 15 MINUTES</span></div>
+    <div class="g3" style="flex:1">
+      ${[["1","Add a <code>contacts update</code> command",
+          "Time yourself.<br><br>Under 5 minutes? Good — the architecture is doing its job.<br><br>Longer? Some logic has leaked out of the core."],
+         ["2","Find business logic hiding in <code>cli.py</code>",
+          "Hint: how is <code>--reason</code> handled for <code>closed_lost</code>?<br><br>Check <code>core/deals.py</code> before you conclude anything."],
+         ["3","Answer without opening a file",
+          "If we delete <code>cli.py</code> entirely, does the web app still work?<br><br>Why?"]]
+        .map(([n,t,d])=>`
+        <div class="card p">
+          <div class="flex" style="align-items:flex-start">
+            <div class="num" style="width:34px;height:34px;flex:0 0 34px;font-size:16px">${n}</div>
+            <div style="font-size:15px;font-weight:800;color:var(--purple-deep);line-height:1.35">${t}</div>
+          </div>
+          <div style="font-size:14px;line-height:1.6;margin-top:14px">${d}</div>
+        </div>`).join("")}
+    </div>
+    <div class="callout" style="margin-top:14px;font-size:14px">
+      Exercise 2 is a trick — the rule is already in the core and <code>cli.py</code> is clean. Finding nothing is the correct answer.</div>
+  </div>`,
+  notes: `Give 15 minutes and walk the room. Do not sit down.
+
+Exercise 1 is the real assessment. Anyone finishing in three minutes has understood the architecture — ask THEM to explain it to their neighbour rather than starting exercise 2. Peer explanation is worth more than another exercise.
+
+Exercise 2 is deliberately a trick. Learners who go looking and find nothing have learned to verify a claim instead of trusting a slide. Say that out loud when you debrief.
+
+Exercise 3 answer: yes, because cli.py imports core, not the other way round. Dependencies point inward.`
+},
+
+{
+  badge: "PART E · WRAP", time: "4 min",
+  title: "What We Actually Proved Today",
+  html: `
+  <h1>What We Actually Proved Today</h1>
+  <div class="sub">Ask the room to supply the evidence column before you reveal it.</div>
+  <div class="body">
+    <div class="row" style="border:none;padding:0 16px 8px;grid-template-columns:1fr 1.5fr">
+      <div class="lbl" style="margin:0">THE CLAIM</div><div class="lbl" style="margin:0">THE EVIDENCE</div>
+    </div>
+    <div class="rows">
+      ${[["Logic lives in one place","Two interfaces, one <code>core/</code>, zero duplication","purple-deep"],
+         ["Adding an interface is cheap","The CLI took one file and no core changes","purple-deep"],
+         ["Rules are enforced everywhere","<code>closed_lost</code> needs a reason in the browser AND the terminal","green-deep"],
+         ["Errors can teach the caller","Field name plus allowed values, every single time","green-deep"],
+         ["Human tools can be agent-ready","One <code>--json</code> flag. That is the entire cost.","yellow-deep"]]
+        .map(([c,e,col])=>`
+        <div class="row" style="grid-template-columns:1fr 1.5fr;border-color:var(--${col})">
+          <div style="font-weight:800;font-size:15px;color:var(--${col})">${c}</div>
+          <div style="font-size:14.5px">${e}</div></div>`).join("")}
+    </div>
+  </div>`,
+  notes: `Cover the right column if your presenter tool allows, and ask the room to fill it in from memory. Recall beats re-reading for retention.
+
+The last row is the transition into the rest of the course. One flag was the entire cost of being agent-ready. Everything else was ordinary good engineering.`
+},
+
+{
+  badge: "PART E · ROADMAP", time: "4 min",
+  title: "What Comes Next",
+  html: `
+  <h1>What Comes Next</h1>
+  <div class="sub">Same core. Untouched again. But the user stops being a person.</div>
+  <div class="body">
+    <div class="rows">
+      ${[["1","Web UI + REST","humans, browser","DONE","green-deep","green-soft"],
+         ["2","CLI","humans, terminal","DONE","green-deep","green-soft"],
+         ["3","Local MCP server","coding agents — Claude Code, Codex","NEXT","purple-deep","purple-soft"],
+         ["4","Remote MCP server","ChatGPT, Claude on the web","","purple",""],
+         ["5","Skill","any agent, through the CLI","","yellow-deep",""],
+         ["6","Capstone — the CRM Agent","&quot;Prepare my follow-ups for tomorrow.&quot;","","ink",""]]
+        .map(([n,t,w,tag,col,bg])=>`
+        <div class="row" style="grid-template-columns:44px 2.3fr 3fr 90px;
+             border-color:var(--${col});border-width:${tag?2:1.2}px;${bg?`background:var(--${bg})`:''}">
+          <div style="width:32px;height:32px;border-radius:50%;background:var(--${col});color:#fff;
+               display:grid;place-items:center;font-weight:800;font-size:14px">${n}</div>
+          <div style="font-weight:800;font-size:15.5px">${t}</div>
+          <div style="font-size:14px;color:var(--ink-soft);font-style:italic">${w}</div>
+          <div style="font-size:11.5px;font-weight:800;letter-spacing:1px;color:var(--${col});text-align:right">${tag}</div>
+        </div>`).join("")}
+    </div>
+    <div class="callout" style="margin-top:16px">
+      Next time: the agent picks which function to call, by itself.</div>
+  </div>`,
+  notes: `Set up Session 3 with the exact promise: "Next time we add a third interface. Same core, untouched again. But the user is not a person — it is an AI agent, and it decides which function to call by itself."
+
+Then preview the capstone in one breath: "Prepare my sales follow-up for tomorrow" → the agent searches accounts, checks last activity, spots the gaps, creates tasks, assigns them, reports back. Every one of those steps is a function we already wrote today.
+
+That last sentence is the one that makes people come back for Session 3.`
+},
+
+{
+  badge: null, cls: "closing", time: "2 min",
+  title: "One Line to Remember",
+  html: `
+  <div class="box">
+    <h2>MCP does not make your application intelligent.<br>
+        <span>MCP makes your application's capabilities<br>available to intelligence.</span></h2>
+    <div class="underline" style="width:300px;margin:18px auto 0"></div>
+    <div class="q">So where should you spend your effort — on the MCP server, or on the core?</div>
+  </div>
+  <div style="position:absolute;bottom:26px;font-size:12px;color:var(--ink-light)">
+    Sessions 1 &amp; 2 · MCP Workshop · Skillopedia × Claude Code</div>`,
+  notes: `End here. Do not add a slide after this one.
+
+Ask the closing question and wait for the room to answer "the core." If they say it out loud, they own it.
+
+Then stop talking. Let the sentence be the last thing on screen while people pack up.`
+},
+];
+
+/* ============================================================
+   Renderer + navigation
+   ============================================================ */
+const deck = document.getElementById("deck");
+const TOTAL = SLIDES.length;
+
+deck.innerHTML = SLIDES.map((s, i) => `
+  <section class="slide ${s.cls || ""}" data-i="${i}">
+    ${s.cls ? "" : `<div class="dots"><i></i><i></i></div>`}
+    ${s.badge ? `<div class="badge">${s.badge}</div>` : ""}
+    ${s.html}
+    ${s.cls ? "" : `<div class="foot"><span>MCP Workshop · Sessions 1 &amp; 2 · Skillopedia × Claude Code</span>
+                    <span><b>${i + 1} / ${TOTAL}</b></span></div>`}
+  </section>`).join("");
+
+let cur = 0;
+const slides = [...document.querySelectorAll(".slide")];
+const notesEl = document.getElementById("notes");
+
+function show(i) {
+  cur = Math.max(0, Math.min(TOTAL - 1, i));
+  slides.forEach((s, n) => s.classList.toggle("on", n === cur));
+  document.getElementById("cur").textContent = cur + 1;
+  document.getElementById("nTitle").textContent = `${cur + 1}. ${SLIDES[cur].title}`;
+  document.getElementById("nBody").innerHTML =
+    SLIDES[cur].notes.split("\n\n").map(p => `<p>${p}</p>`).join("");
+  document.getElementById("nTime").textContent = `⏱  ${SLIDES[cur].time}   ·   slide ${cur + 1} of ${TOTAL}`;
+  location.hash = "#" + (cur + 1);
+}
+
+function fit() {
+  const pad = notesEl.classList.contains("on") ? 470 : 40;
+  const k = Math.min((innerWidth - pad) / 1280, (innerHeight - 40) / 720);
+  deck.style.transform = `scale(${k})`;
+  document.getElementById("stage").style.paddingRight =
+    notesEl.classList.contains("on") ? "430px" : "0";
+}
+
+addEventListener("keydown", (e) => {
+  const k = e.key;
+  if (k === "ArrowRight" || k === " " || k === "PageDown") { show(cur + 1); e.preventDefault(); }
+  else if (k === "ArrowLeft" || k === "PageUp") { show(cur - 1); e.preventDefault(); }
+  else if (k === "Home") show(0);
+  else if (k === "End") show(TOTAL - 1);
+  else if (k.toLowerCase() === "n") { notesEl.classList.toggle("on"); fit(); }
+  else if (k.toLowerCase() === "f") {
+    document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen();
+  }
+  else if (k === "?") document.getElementById("help").classList.toggle("on");
+  else if (k === "Escape") document.getElementById("help").classList.remove("on");
+  else if (/^[1-9]$/.test(k)) show(parseInt(k, 10) - 1);
+});
+
+deck.addEventListener("click", (e) => show(cur + (e.clientX < innerWidth / 3 ? -1 : 1)));
+document.getElementById("help").addEventListener("click", (e) => e.currentTarget.classList.remove("on"));
+addEventListener("resize", fit);
+addEventListener("hashchange", () => {
+  const n = (parseInt(location.hash.slice(1), 10) || 1) - 1;
+  if (n !== cur) show(n);
+});
+
+show(Math.max(0, (parseInt(location.hash.slice(1), 10) || 1) - 1));
+fit();
+</script>
+</body>
+</html>

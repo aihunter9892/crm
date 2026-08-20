@@ -19,3 +19,7 @@ Thumbs.db
 # Env
 .env
 .env.local
+
+# Node (slide build)
+node_modules/
+package-lock.json

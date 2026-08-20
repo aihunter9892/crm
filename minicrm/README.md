@@ -164,6 +164,10 @@ python cli.py --json accounts list        # machine-readable, for agents later
 
 ## Teaching material
 
-- [Slides — Sessions 1 & 2](docs/slides/sessions-1-2-slides.md) — 28 slides with
-  speaker notes, live-demo cues and timings
+- **[Slide decks — Sessions 1 & 2](docs/slides/)** — 28 slides with speaker
+  notes, live-demo cues and timings, in three formats:
+  - `MCP-Workshop-Sessions-1-2.pptx` — present and edit; notes land in
+    PowerPoint's presenter view
+  - `MCP-Workshop-Sessions-1-2.html` — present from a browser; `N` toggles notes
+  - `sessions-1-2-slides.md` — read or paste elsewhere
 - [Session 2 handout — Build the CLI adapter](docs/02-cli-adapter.md)

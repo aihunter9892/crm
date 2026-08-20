@@ -1,0 +1,7 @@
+{
+  "name": "minicrm-slides",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Build script for the MiniCRM workshop deck",
+  "dependencies": { "pptxgenjs": "^3.12.0" }
+}
