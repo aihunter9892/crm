@@ -16,13 +16,88 @@ and a Skill — with zero business logic duplicated.
   (done)    (done)     (next)     (next)      (next)
 ```
 
-## Run it
+## Setup
+
+**Use a virtual environment.** Most Windows machines have two or three Pythons
+installed (a python.org one, a conda one, a Microsoft Store one). Installing
+into a venv means everyone in the room runs the same interpreter with the same
+packages, and nothing you install here can break another project.
+
+### Windows (PowerShell)
+
+```powershell
+cd minicrm
+python -m venv .venv
+.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+```
+
+If PowerShell refuses to run the activate script, allow it for this session
+only:
+
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy RemoteSigned
+```
+
+### macOS / Linux
 
 ```bash
 cd minicrm
+python3 -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
-python seed.py --reset
-python run.py
+```
+
+### Check you are in the right Python
+
+```bash
+python -c "import sys; print(sys.executable)"
+```
+
+The path printed must end in `.venv`. If it does not, activation did not take
+effect — the commands below will fail with `ModuleNotFoundError`.
+
+<details>
+<summary><b>Already using Anaconda / conda?</b></summary>
+
+If your prompt starts with `(base)` you are inside conda's Python, which is a
+different interpreter from the one `python.org` installed. Two options:
+
+**Option A — a conda env (recommended if you live in conda):**
+
+```bash
+conda create -n minicrm python=3.12 -y
+conda activate minicrm
+pip install -r requirements.txt
+```
+
+**Option B — install into conda's base env:**
+
+```bash
+python -m pip install -r requirements.txt
+```
+
+Either way, the rule is the same: whichever `python` your prompt resolves to is
+the one that needs the packages.
+</details>
+
+<details>
+<summary><b>Common errors and what they mean</b></summary>
+
+| Error | Cause | Fix |
+|---|---|---|
+| `ModuleNotFoundError: No module named 'email_validator'` | Packages installed into a different Python than the one you are running | Activate the venv, then `pip install -r requirements.txt` |
+| `ModuleNotFoundError: No module named 'fastapi'` / `'typer'` | Same cause | Same fix |
+| `ModuleNotFoundError: No module named 'core'` | You ran the command from the wrong folder | `cd minicrm` first |
+| `Address already in use` on port 8000 | The web app is already running | Use the running one, or stop it with Ctrl+C |
+| `no such table: accounts` | Database never created | `python seed.py --reset` |
+</details>
+
+## Run it
+
+```bash
+python seed.py --reset      # create the database and fill it with demo data
+python run.py               # start the web app
 ```
 
 Open http://127.0.0.1:8000 — REST docs at http://127.0.0.1:8000/docs
@@ -87,6 +162,8 @@ python cli.py --json accounts list        # machine-readable, for agents later
 | 4 | `mcp_remote.py` (HTTP) | Claude.ai / ChatGPT | |
 | 5 | `.claude/skills/crm-followup/SKILL.md` | any agent, via the CLI | |
 
-## Teaching notes
+## Teaching material
 
-- [Session 2 — Build the CLI adapter](docs/02-cli-adapter.md)
+- [Slides — Sessions 1 & 2](docs/slides/sessions-1-2-slides.md) — 28 slides with
+  speaker notes, live-demo cues and timings
+- [Session 2 handout — Build the CLI adapter](docs/02-cli-adapter.md)
